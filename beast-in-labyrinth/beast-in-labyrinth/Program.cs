@@ -1,4 +1,10 @@
-﻿namespace beast_in_labyrinth
+﻿using System.Data;
+using System.Diagnostics;
+using System.Numerics;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+
+namespace beast_in_labyrinth
 {
     internal class Program
     {
@@ -8,7 +14,7 @@
             // LOAD INPUT
             // ------------------
 
-            int width = int.Parse(Console.ReadLine()!);  
+            int width = int.Parse(Console.ReadLine()!);
             int height = int.Parse(Console.ReadLine()!);
 
             char[,] map = new char[height, width];
@@ -24,34 +30,112 @@
             }
 
             // ------------------
+            // CONSTRUCT MONSTERS
+            // ------------------
+
+            List<Monster> monsters = new List<Monster>();
+
+            for (int row = 0; row < map.GetLength(0); row++)
+            {
+                for (int col = 0; col < map.GetLength(1); col++)
+                {
+                    if (directionToChar.Contains(map[row, col]))
+                    {
+                        monsters.Add(new Monster(map, row, col));
+                    }
+                }
+            }
+
+            // ------------------
             // 20 STEPS
             // ------------------
 
-            Console.WriteLine(map);
+            for (int i = 0; i < 20; i++)
+            {
+                foreach (Monster monster in monsters)
+                {
+                    monster.GameTurn();
+                }
+                Console.WriteLine();
+                Console.WriteLine("{0}. krok", i+1);
+                PrintMap(map);
+            }
         }
 
-        static void Step(char[,] map)
+        static void PrintMap(char[,] map)
         {
-            enum StepDirection 
-            { 
-                Up,
-                Right,
-                Down,
-                Left
+            for (int row = 0; row < map.GetLength(0); row++)
+            {
+                for (int col = 0; col < map.GetLength(1); col++)
+                {
+                    Console.Write(map[row, col]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        static List<char> directionToChar = new List<char> { '^', '>', 'v', '<' };
+        static List<(int row, int col)> directionToCords = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+
+        class Monster
+        {
+            public char[,] map;
+
+            public int row;
+            public int col;
+
+            public int orientation;
+
+            public bool RotatedRightOnPreviousTurn = false;
+
+            public Monster(char[,] _map, int _row, int _col)
+            {
+                row = _row;
+                col = _col;
+                map = _map;
+
+                this.SetOrientation();
             }
 
-            // FIND MONSTER
+            /// <summary>
+            /// From this.row and this.col calculates and sets this.orientation.
+            /// </summary>
+            public void SetOrientation()
+            {
+                orientation = directionToChar.IndexOf(map[row, col]);
+            }
 
+            public void GameTurn()
+            {
+                char right = map[row + directionToCords[(orientation + 1) % 4].row, col + directionToCords[(orientation + 1) % 4].col];
+                char front = map[row + directionToCords[orientation].row, col + directionToCords[orientation].col];
+                char frontright = map[row + directionToCords[orientation].row + directionToCords[(orientation + 1) % 4].row, col + directionToCords[orientation].col + directionToCords[(orientation + 1) % 4].col];
 
-            // INTERPRET ORIENTATION
+                // cases when 'X' is on the right
+                if (right != '.' && front != '.') this.Rotate(-1);
+                else if (right != '.') this.StepForwards();
+                // cases when '.' is on the right
+                else if (front != '.') this.Rotate(1);
+                else if (frontright != '.') this.StepForwards();
+                else this.Rotate(1);
+            }
 
-            // CHECK AVAILABLE SPACE
+            public void Rotate(int rotation)
+            {
+                this.orientation = ((this.orientation + rotation) % 4 + 4) % 4;
 
-            // MOVE
-            
-            // UPDATE ORIENTATION
+                this.map[row, col] = directionToChar[this.orientation];
+            }
 
-            // PRINT
+            public void StepForwards()
+            {
+                this.map[row, col] = '.';
+
+                this.row += directionToCords[this.orientation].row;
+                this.col += directionToCords[this.orientation].col;
+
+                this.map[row, col] = directionToChar[this.orientation];
+            }
         }
     }
 }

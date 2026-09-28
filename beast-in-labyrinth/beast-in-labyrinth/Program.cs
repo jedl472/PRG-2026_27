@@ -86,8 +86,6 @@ namespace beast_in_labyrinth
 
             public int orientation;
 
-            public bool RotatedRightOnPreviousTurn = false;
-
             public Monster(char[,] _map, int _row, int _col)
             {
                 row = _row;
